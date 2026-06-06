@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANPR — Video Detection</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@300;400;500;600&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#0a0a0f; color:#e0e0e0; font-family:'Inter',sans-serif; min-height:100vh; }
+        .navbar { background:#12121a; border-bottom:1px solid #00ff9922; padding:0 30px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; }
+        .logo { font-family:'Orbitron',monospace; font-size:1.2rem; font-weight:700; color:#00ff99; letter-spacing:3px; }
+        .logo span { color:#fff; }
+        .nav-links { display:flex; align-items:center; gap:5px; flex-wrap:nowrap; }
+        .nav-links a { color:#666; text-decoration:none; padding:8px 12px; border-radius:6px; font-size:0.82rem; transition:all 0.2s; white-space:nowrap; }
+        .nav-links a:hover { color:#00ff99; background:#00ff9910; }
+        .nav-links a.active { color:#00ff99; background:#00ff9915; }
+        .nav-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        .user-badge { background:#00ff9915; border:1px solid #00ff9933; color:#00ff99; padding:5px 12px; border-radius:20px; font-size:0.8rem; white-space:nowrap; }
+        .dev-badge { background:#ff990015; border:1px solid #ff990033; color:#ff9900; padding:5px 10px; border-radius:20px; font-size:0.72rem; animation:pulse 2s infinite; white-space:nowrap; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        .btn-logout { background:#ff444420; border:1px solid #ff444440; color:#ff4444; padding:6px 12px; border-radius:6px; font-size:0.8rem; text-decoration:none; white-space:nowrap; }
+        .btn-logout:hover { background:#ff444430; }
+        .container { padding:30px; max-width:1200px; margin:0 auto; }
+        .page-title { font-size:1.6rem; font-weight:700; color:#fff; margin-bottom:4px; }
+        .page-sub { color:#444; font-size:0.85rem; margin-bottom:25px; }
+        .panel { background:#12121a; border:1px solid #1e1e2e; border-radius:12px; padding:25px; margin-bottom:20px; }
+        .panel-title { color:#00ff99; font-size:0.9rem; font-weight:600; margin-bottom:18px; }
+        .upload-area { border:2px dashed #2a2a3a; border-radius:10px; padding:40px; text-align:center; cursor:pointer; transition:all 0.2s; }
+        .upload-area:hover, .upload-area.active { border-color:#00ff99; background:#00ff9905; }
+        .btn { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-size:0.9rem; font-weight:600; transition:all 0.2s; width:100%; margin-top:12px; }
+        .btn-primary { background:#00ff99; color:#000; }
+        .btn-primary:hover { background:#00cc77; }
+        .btn-primary:disabled { background:#222; color:#555; cursor:not-allowed; }
+        .progress-wrap { display:none; margin:15px 0; }
+        .progress-bar { background:#1e1e2e; border-radius:8px; height:10px; overflow:hidden; }
+        .progress-fill { height:100%; background:linear-gradient(90deg,#00ff99,#4488ff); border-radius:8px; transition:width 0.5s; width:0%; }
+        .progress-text { color:#666; font-size:0.82rem; text-align:center; margin-top:8px; }
+        .summary { background:#0a0a0f; border:1px solid #1e1e2e; border-radius:10px; padding:20px; margin-bottom:20px; display:none; }
+        .summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; text-align:center; }
+        .sum-val { font-size:1.8rem; font-weight:700; color:#fff; }
+        .sum-lbl { color:#444; font-size:0.8rem; margin-top:3px; }
+        .video-output { width:100%; border-radius:10px; margin-top:15px; display:none; border:2px solid #00ff9933; }
+        .results-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:15px; margin-top:20px; }
+        .result-card { background:#0a0a0f; border:1px solid #1e1e2e; border-radius:10px; overflow:hidden; transition:border-color 0.2s; }
+        .result-card:hover { border-color:#00ff9944; }
+        .result-card.alert { border-color:#ff4444; }
+        .result-card img { width:100%; height:130px; object-fit:cover; }
+        .result-info { padding:12px; }
+        .result-plate { font-family:monospace; font-size:1rem; font-weight:700; color:#fff; letter-spacing:2px; }
+        .result-plate.alert { color:#ff4444; }
+        .badge { padding:3px 8px; border-radius:20px; font-size:0.75rem; font-weight:600; display:inline-block; margin-top:5px; margin-right:4px; }
+        .b-green { background:#00ff9920; color:#00ff99; }
+        .b-red   { background:#ff444420; color:#ff4444; }
+        .b-blue  { background:#4488ff20; color:#4488ff; }
+        .spinner { display:inline-block; width:14px; height:14px; border:2px solid #1e1e2e; border-top-color:#00ff99; border-radius:50%; animation:spin 0.8s linear infinite; margin-right:6px; vertical-align:middle; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        .file-info { color:#555; font-size:0.82rem; text-align:center; margin-top:10px; display:none; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">ANPR <span>System</span></div>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/webcam">📹 Live</a>
+        <a href="/detect_video" class="active">🎥 Video</a>
+        <a href="/watchlist">Watchlist</a>
+        <a href="/logs">Logs</a>
+        <a href="/about">About</a>
+        {% if role == 'admin' %}<a href="/users">👥 Users</a>{% endif %}
+    </div>
+    <div class="nav-right">
+        <span class="dev-badge">⚡ Dev Phase</span>
+        <span class="user-badge">👤 {{ user }}</span>
+        <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-title">Video Detection</div>
+    <div class="page-sub">Upload a video — system tracks plates frame by frame and produces annotated output video</div>
+
+    <div class="panel">
+        <div class="panel-title">🎬 Upload Video</div>
+        <div class="upload-area" id="uploadArea"
+             onclick="document.getElementById('videoInput').click()"
+             ondragover="event.preventDefault();this.classList.add('active')"
+             ondragleave="this.classList.remove('active')"
+             ondrop="handleDrop(event)">
+            <div style="font-size:3rem;margin-bottom:10px">🎬</div>
+            <p style="color:#555;font-size:0.95rem">Click or drag & drop video</p>
+            <p style="color:#333;font-size:0.8rem;margin-top:5px">MP4, AVI, MOV supported</p>
+        </div>
+        <input type="file" id="videoInput" accept="video/*" style="display:none">
+        <div class="file-info" id="fileInfo"></div>
+        <div class="progress-wrap" id="progressWrap">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Processing...</div>
+        </div>
+        <button class="btn btn-primary" id="processBtn"
+                onclick="processVideo()" disabled>
+            🚀 Process Video
+        </button>
+    </div>
+
+    <div class="summary" id="summary">
+        <div class="summary-grid">
+            <div><div class="sum-val" id="totalFrames">0</div><div class="sum-lbl">Frames Analyzed</div></div>
+            <div><div class="sum-val" id="platesFound">0</div><div class="sum-lbl">Unique Plates Found</div></div>
+            <div><div class="sum-val" id="alertsFound" style="color:#ff4444">0</div><div class="sum-lbl">Watchlist Alerts</div></div>
+        </div>
+    </div>
+
+    <div id="outputVideoWrap" style="display:none">
+        <div class="panel">
+            <div class="panel-title">🎥 Annotated Output Video</div>
+            <p style="color:#555;font-size:0.85rem;margin-bottom:12px">Plates tracked continuously throughout video</p>
+            <video class="video-output" id="outputVideo" controls></video>
+            <a id="downloadBtn" class="btn btn-primary"
+               style="display:none;text-align:center;text-decoration:none;margin-top:10px">
+                📥 Download Annotated Video
+            </a>
+        </div>
+    </div>
+
+    <div id="resultsSection" style="display:none">
+        <div class="panel">
+            <div class="panel-title">🔍 Detected Plates</div>
+            <div class="results-grid" id="resultsGrid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const videoInput = document.getElementById('videoInput');
+const processBtn = document.getElementById('processBtn');
+
+videoInput.addEventListener('change', function() { handleFile(this.files[0]); });
+
+function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea').classList.remove('active');
+    const file = e.dataTransfer.files[0];
+    if (file) { videoInput.files = e.dataTransfer.files; handleFile(file); }
+}
+
+function handleFile(file) {
+    if (!file) return;
+    const info = document.getElementById('fileInfo');
+    info.style.display = 'block';
+    info.textContent = '📁 ' + file.name + ' (' + (file.size/1024/1024).toFixed(1) + ' MB)';
+    processBtn.disabled = false;
+    document.getElementById('uploadArea').style.borderColor = '#00ff99';
+}
+
+async function processVideo() {
+    const file = videoInput.files[0];
+    if (!file) return;
+    processBtn.disabled  = true;
+    processBtn.innerHTML = '<span class="spinner"></span>Processing video...';
+    document.getElementById('progressWrap').style.display = 'block';
+
+    let prog = 0;
+    const pi = setInterval(() => {
+        prog = Math.min(prog + Math.random() * 3, 90);
+        document.getElementById('progressFill').style.width = prog + '%';
+        if (prog < 30) document.getElementById('progressText').textContent = 'Uploading video...';
+        else if (prog < 60) document.getElementById('progressText').textContent = 'Detecting plates...';
+        else document.getElementById('progressText').textContent = 'Generating annotated video...';
+    }, 500);
+
+    const fd = new FormData();
+    fd.append('video', file);
+
+    try {
+        const res  = await fetch('/detect_video', { method:'POST', body:fd });
+        const data = await res.json();
+        clearInterval(pi);
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('progressText').textContent = '✅ Done! ' + data.plates_found + ' unique plates found.';
+
+        document.getElementById('summary').style.display = 'block';
+        document.getElementById('totalFrames').textContent = data.total_frames;
+        document.getElementById('platesFound').textContent = data.plates_found;
+        document.getElementById('alertsFound').textContent = data.results.filter(r=>r.matched).length;
+
+        if (data.output_video) {
+            document.getElementById('outputVideoWrap').style.display = 'block';
+            const vid = document.getElementById('outputVideo');
+            vid.src = 'data:video/mp4;base64,' + data.output_video;
+            vid.style.display = 'block';
+            const dl = document.getElementById('downloadBtn');
+            dl.style.display = 'block';
+            dl.href = 'data:video/mp4;base64,' + data.output_video;
+            dl.download = 'anpr_output.mp4';
+        }
+
+        if (data.results.length > 0) {
+            document.getElementById('resultsSection').style.display = 'block';
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+            for (const r of data.results) {
+                grid.innerHTML += '<div class="result-card '+(r.matched?'alert':'')+'"><img src="data:image/jpeg;base64,'+r.image+'" alt="plate"><div class="result-info"><div class="result-plate '+(r.matched?'alert':'')+'">'+r.plate+'</div><span class="badge b-blue">'+r.confidence+'%</span>'+(r.matched?'<span class="badge b-red">⚠ ALERT</span>':'<span class="badge b-green">✓ Clear</span>')+'<div style="color:#333;font-size:0.75rem;margin-top:5px">'+r.timestamp+'</div></div></div>';
+            }
+        }
+    } catch(err) {
+        clearInterval(pi);
+        document.getElementById('progressText').textContent = '❌ Error: ' + err.message;
+    } finally {
+        processBtn.disabled  = false;
+        processBtn.innerHTML = '🚀 Process Video';
+    }
+}
+</script>
+</body>
+</html>

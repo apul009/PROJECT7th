@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANPR — About</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@300;400;500;600&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#0a0a0f; color:#e0e0e0; font-family:'Inter',sans-serif; min-height:100vh; }
+        .navbar { background:#12121a; border-bottom:1px solid #00ff9922; padding:0 30px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; }
+        .logo { font-family:'Orbitron',monospace; font-size:1.2rem; font-weight:700; color:#00ff99; letter-spacing:3px; }
+        .logo span { color:#fff; }
+        .nav-links { display:flex; align-items:center; gap:5px; flex-wrap:nowrap; }
+        .nav-links a { color:#666; text-decoration:none; padding:8px 12px; border-radius:6px; font-size:0.82rem; transition:all 0.2s; white-space:nowrap; }
+        .nav-links a:hover { color:#00ff99; background:#00ff9910; }
+        .nav-links a.active { color:#00ff99; background:#00ff9915; }
+        .nav-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        .user-badge { background:#00ff9915; border:1px solid #00ff9933; color:#00ff99; padding:5px 12px; border-radius:20px; font-size:0.8rem; white-space:nowrap; }
+        .dev-badge { background:#ff990015; border:1px solid #ff990033; color:#ff9900; padding:5px 10px; border-radius:20px; font-size:0.72rem; animation:pulse 2s infinite; white-space:nowrap; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        .btn-logout { background:#ff444420; border:1px solid #ff444440; color:#ff4444; padding:6px 12px; border-radius:6px; font-size:0.8rem; text-decoration:none; white-space:nowrap; }
+        .btn-logout:hover { background:#ff444430; }
+        .container { padding:40px 30px; max-width:1200px; margin:0 auto; }
+        .page-title { font-size:1.6rem; font-weight:700; color:#fff; margin-bottom:4px; }
+        .page-sub { color:#444; font-size:0.85rem; margin-bottom:40px; }
+        .panel { background:#12121a; border:1px solid #1e1e2e; border-radius:12px; padding:30px; margin-bottom:25px; }
+        .panel h2 { color:#00ff99; font-size:1.1rem; margin-bottom:15px; }
+        .panel p { color:#666; line-height:1.7; font-size:0.9rem; margin-bottom:10px; }
+        .tech-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:20px; }
+        .tech-item { background:#0a0a0f; border:1px solid #1e1e2e; border-radius:8px; padding:15px; text-align:center; }
+        .tech-icon { font-size:1.8rem; margin-bottom:8px; }
+        .tech-name { color:#fff; font-size:0.85rem; font-weight:600; }
+        .tech-desc { color:#444; font-size:0.75rem; margin-top:4px; }
+        .pipeline { display:flex; align-items:center; gap:10px; margin-top:20px; flex-wrap:wrap; }
+        .pipe-step { background:#0a0a0f; border:1px solid #00ff9933; border-radius:8px; padding:10px 16px; font-size:0.8rem; color:#00ff99; text-align:center; }
+        .pipe-arrow { color:#333; font-size:1.2rem; }
+        .section-title { font-size:1.1rem; font-weight:700; color:#fff; margin-bottom:5px; margin-top:30px; }
+        .section-sub { color:#444; font-size:0.8rem; margin-bottom:20px; }
+        .team-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+        .member-card { background:#12121a; border:1px solid #1e1e2e; border-radius:12px; padding:25px; text-align:center; transition:border-color 0.2s; }
+        .member-card:hover { border-color:#00ff9944; }
+        .member-photo { width:100px; height:100px; border-radius:50%; margin:0 auto 15px; border:3px solid #00ff9933; background:#1e1e2e; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:2.5rem; }
+        .member-photo img { width:100%; height:100%; object-fit:cover; }
+        .member-name { font-size:1rem; font-weight:600; color:#fff; margin-bottom:4px; }
+        .member-role { color:#00ff99; font-size:0.8rem; margin-bottom:10px; }
+        .member-desc { color:#555; font-size:0.82rem; line-height:1.6; }
+        .notice-card { background:#ff990010; border:1px solid #ff990030; border-radius:10px; padding:20px; margin-top:25px; display:flex; gap:15px; align-items:flex-start; }
+        .notice-icon { font-size:1.5rem; flex-shrink:0; }
+        .notice-text { color:#888; font-size:0.85rem; line-height:1.6; }
+        .notice-text strong { color:#ff9900; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">ANPR <span>System</span></div>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/webcam">📹 Live</a>
+        <a href="/detect_video">🎥 Video</a>
+        <a href="/watchlist">Watchlist</a>
+        <a href="/logs">Logs</a>
+        <a href="/about" class="active">About</a>
+        {% if role == 'admin' %}<a href="/users">👥 Users</a>{% endif %}
+    </div>
+    <div class="nav-right">
+        <span class="dev-badge">⚡ Dev Phase</span>
+        <span class="user-badge">👤 {{ user }}</span>
+        <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-title">About This System</div>
+    <div class="page-sub">Automatic Number Plate Recognition — Nepali Embossed Plates</div>
+
+    <div class="panel">
+        <h2>📌 Project Overview</h2>
+        <p>This system is a college-level final year project implementing an Automatic Number Plate Recognition (ANPR) system specifically designed for Nepali embossed number plates. The system detects vehicle number plates, recognizes characters, and matches against a watchlist to trigger alerts.</p>
+        <p>The core character recognition CNN is implemented entirely from scratch using NumPy — without any pre-built deep learning libraries — achieving 98.6% test accuracy on the Nepali embossed plate character dataset.</p>
+
+        <div class="tech-grid">
+            <div class="tech-item">
+                <div class="tech-icon">🧠</div>
+                <div class="tech-name">CNN from Scratch</div>
+                <div class="tech-desc">NumPy only — 98.6% accuracy</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">🎯</div>
+                <div class="tech-name">YOLOv8 Plate Detector</div>
+                <div class="tech-desc">95.8% mAP50 — plate localization</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">✂️</div>
+                <div class="tech-name">YOLOv8 Char Detector</div>
+                <div class="tech-desc">95.5% mAP50 — character segmentation</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">🌐</div>
+                <div class="tech-name">Flask + SQLite</div>
+                <div class="tech-desc">Web dashboard & logging</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">📷</div>
+                <div class="tech-name">OpenCV</div>
+                <div class="tech-desc">Image preprocessing</div>
+            </div>
+            
+        </div>
+
+        <div style="margin-top:20px">
+            <div style="color:#555;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">System Pipeline</div>
+            <div class="pipeline">
+                <div class="pipe-step">📷 Input</div>
+                <div class="pipe-arrow">→</div>
+                <div class="pipe-step">🎯 YOLO<br>Plate Detection</div>
+                <div class="pipe-arrow">→</div>
+                <div class="pipe-step">⚙️ Preprocessing</div>
+                <div class="pipe-arrow">→</div>
+                <div class="pipe-step">✂️ YOLO<br>Char Detection</div>
+                <div class="pipe-arrow">→</div>
+                <div class="pipe-step">🧠 CNN<br>Recognition</div>
+                <div class="pipe-arrow">→</div>
+                <div class="pipe-step">🔔 Watchlist<br>Alert</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">👥 Development Team</div>
+    <div class="section-sub">7th Semester Project — Computer Science & Engineering</div>
+
+    <div class="team-grid">
+        <div class="member-card">
+            <div class="member-photo">
+                <!-- INSERT PHOTO: <img src="/static/photos/apul.jpg"> -->
+                👤
+            </div>
+            <div class="member-name">Apul Baral</div>
+            <div class="member-role">Project Lead & ML Engineer</div>
+            <div class="member-desc">
+                <!-- INSERT DESCRIPTION -->
+                Responsible for CNN implementation from scratch, model training, and overall system architecture.
+            </div>
+        </div>
+        <div class="member-card">
+            <div class="member-photo">
+                <!-- INSERT PHOTO: <img src="/static/photos/kritiz.jpg"> -->
+                👤
+            </div>
+            <div class="member-name">Kritiz Sapkota</div>
+            <div class="member-role">Backend Developer</div>
+            <div class="member-desc">
+                <!-- INSERT DESCRIPTION -->
+                Responsible for Flask backend, database design, API development, and system integration.
+            </div>
+        </div>
+        <div class="member-card">
+            <div class="member-photo">
+                <!-- INSERT PHOTO: <img src="/static/photos/gagan.jpg"> -->
+                👤
+            </div>
+            <div class="member-name">Gagan Sapkota</div>
+            <div class="member-role">Frontend Developer</div>
+            <div class="member-desc">
+                <!-- INSERT DESCRIPTION -->
+                Responsible for dashboard UI/UX design, frontend development, and webcam integration.
+            </div>
+        </div>
+    </div>
+
+    <div class="notice-card">
+        <div class="notice-icon">⚠️</div>
+        <div class="notice-text">
+            <strong>Initial Development Phase — Privacy Notice</strong><br>
+            This system is currently in its initial development phase and is intended for academic and demonstration purposes only. All vehicle detections are stored locally and not shared with third parties. The system should not be used for actual law enforcement without proper legal authorization. By using this system, you acknowledge it is a student project under active development.
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANPR — User Management</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@300;400;500;600&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#0a0a0f; color:#e0e0e0; font-family:'Inter',sans-serif; min-height:100vh; }
+        .navbar { background:#12121a; border-bottom:1px solid #00ff9922; padding:0 30px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; }
+        .logo { font-family:'Orbitron',monospace; font-size:1.2rem; font-weight:700; color:#00ff99; letter-spacing:3px; }
+        .logo span { color:#fff; }
+        .nav-links { display:flex; align-items:center; gap:5px; flex-wrap:nowrap; }
+        .nav-links a { color:#666; text-decoration:none; padding:8px 12px; border-radius:6px; font-size:0.82rem; transition:all 0.2s; white-space:nowrap; }
+        .nav-links a:hover { color:#00ff99; background:#00ff9910; }
+        .nav-links a.active { color:#00ff99; background:#00ff9915; }
+        .nav-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        .user-badge { background:#00ff9915; border:1px solid #00ff9933; color:#00ff99; padding:5px 12px; border-radius:20px; font-size:0.8rem; white-space:nowrap; }
+        .dev-badge { background:#ff990015; border:1px solid #ff990033; color:#ff9900; padding:5px 10px; border-radius:20px; font-size:0.72rem; animation:pulse 2s infinite; white-space:nowrap; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        .btn-logout { background:#ff444420; border:1px solid #ff444440; color:#ff4444; padding:6px 12px; border-radius:6px; font-size:0.8rem; text-decoration:none; white-space:nowrap; }
+        .btn-logout:hover { background:#ff444430; }
+        .container { padding:30px; max-width:1000px; margin:0 auto; }
+        .page-title { font-size:1.6rem; font-weight:700; color:#fff; margin-bottom:4px; }
+        .page-sub { color:#444; font-size:0.85rem; margin-bottom:25px; }
+        .panel { background:#12121a; border:1px solid #1e1e2e; border-radius:12px; padding:25px; margin-bottom:20px; }
+        .panel-title { color:#00ff99; font-size:0.9rem; font-weight:600; margin-bottom:18px; }
+        .form-grid { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end; }
+        .form-group label { display:block; color:#555; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+        .form-group input, .form-group select { width:100%; padding:10px 14px; background:#0a0a0f; border:1px solid #2a2a3a; border-radius:8px; color:#fff; font-size:0.9rem; }
+        .form-group input:focus, .form-group select:focus { outline:none; border-color:#00ff99; }
+        .form-group select option { background:#12121a; }
+        .btn { padding:10px 18px; border:none; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.2s; }
+        .btn-primary { background:#00ff99; color:#000; }
+        .btn-primary:hover { background:#00cc77; }
+        .btn-danger { background:#ff444420; color:#ff4444; border:1px solid #ff444430; font-size:0.8rem; padding:6px 12px; text-decoration:none; display:inline-block; }
+        table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+        th { padding:10px 14px; color:#444; font-size:0.75rem; text-transform:uppercase; border-bottom:1px solid #1e1e2e; text-align:left; }
+        td { padding:12px 14px; border-bottom:1px solid #0f0f1a; color:#ccc; }
+        tr:hover td { background:#ffffff05; }
+        .badge { padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
+        .b-green { background:#00ff9920; color:#00ff99; }
+        .b-blue  { background:#4488ff20; color:#4488ff; }
+        .password-req { color:#444; font-size:0.75rem; margin-top:8px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">ANPR <span>System</span></div>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/webcam">📹 Live</a>
+        <a href="/detect_video">🎥 Video</a>
+        <a href="/watchlist">Watchlist</a>
+        <a href="/logs">Logs</a>
+        <a href="/about">About</a>
+        {% if role == 'admin' %}<a href="/users" class="active">👥 Users</a>{% endif %}
+    </div>
+    <div class="nav-right">
+        <span class="dev-badge">⚡ Dev Phase</span>
+        <span class="user-badge">👤 {{ user }}</span>
+        <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-title">User Management</div>
+    <div class="page-sub">Admin panel — manage system users</div>
+
+    <div class="panel">
+        <div class="panel-title">➕ Create New User</div>
+        <form method="POST" action="/users/add">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input name="username" placeholder="e.g. officer1" required>
+                </div>
+                <div class="form-group">
+                    <label>Password * (min 6 chars)</label>
+                    <input name="password" type="password" placeholder="Password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select name="role">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </div>
+            <div class="password-req">Password requirements: minimum 6 characters.</div>
+        </form>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">👥 System Users</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Created</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td style="color:#333">{{ u.id }}</td>
+                    <td style="color:#fff;font-weight:500">{{ u.username }}</td>
+                    <td>
+                        {% if u.role == 'admin' %}
+                        <span class="badge b-green">Admin</span>
+                        {% else %}
+                        <span class="badge b-blue">User</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#444;font-size:0.8rem">{{ u.created }}</td>
+                    <td>
+                        {% if u.username != user %}
+                        <a href="/users/delete/{{ u.id }}"
+                           onclick="return confirm('Delete user {{ u.username }}?')"
+                           class="btn btn-danger">Delete</a>
+                        {% else %}
+                        <span style="color:#333;font-size:0.8rem">Current user</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

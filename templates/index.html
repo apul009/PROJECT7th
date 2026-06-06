@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANPR System — Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@300;400;500;600&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#0a0a0f; color:#e0e0e0; font-family:'Inter',sans-serif; min-height:100vh; }
+
+        .navbar {
+            background:#12121a; border-bottom:1px solid #00ff9922;
+            padding:0 30px; display:flex; align-items:center;
+            justify-content:space-between; height:60px;
+            position:sticky; top:0; z-index:100;
+        }
+        .logo { font-family:'Orbitron',monospace; font-size:1.2rem; font-weight:700; color:#00ff99; letter-spacing:3px; }
+        .logo span { color:#fff; }
+        .nav-links { display:flex; align-items:center; gap:5px; }
+        .nav-links a { color:#666; text-decoration:none; padding:8px 14px; border-radius:6px; font-size:0.85rem; transition:all 0.2s; }
+        .nav-links a:hover { color:#00ff99; background:#00ff9910; }
+        .nav-links a.active { color:#00ff99; background:#00ff9915; }
+        .nav-right { display:flex; align-items:center; gap:12px; }
+        .user-badge { background:#00ff9915; border:1px solid #00ff9933; color:#00ff99; padding:5px 12px; border-radius:20px; font-size:0.8rem; }
+        .dev-badge { background:#ff990015; border:1px solid #ff990033; color:#ff9900; padding:5px 12px; border-radius:20px; font-size:0.75rem; animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        .btn-logout { background:#ff444420; border:1px solid #ff444440; color:#ff4444; padding:6px 14px; border-radius:6px; font-size:0.8rem; text-decoration:none; transition:all 0.2s; }
+        .btn-logout:hover { background:#ff444430; }
+
+        .container { padding:25px 30px; max-width:1400px; margin:0 auto; }
+        .page-title { font-size:1.6rem; font-weight:700; color:#fff; margin-bottom:3px; }
+        .page-sub { color:#444; font-size:0.85rem; margin-bottom:25px; }
+
+        .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:25px; }
+        .stat { background:#12121a; border:1px solid #1e1e2e; border-radius:12px; padding:20px; display:flex; align-items:center; gap:15px; transition:border-color 0.2s; }
+        .stat:hover { border-color:#00ff9933; }
+        .stat-icon { width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
+        .si-green { background:#00ff9920; }
+        .si-red   { background:#ff444420; }
+        .si-blue  { background:#4488ff20; }
+        .si-yellow{ background:#ffaa0020; }
+        .stat-val { font-size:1.8rem; font-weight:700; color:#fff; }
+        .stat-lbl { color:#555; font-size:0.8rem; margin-top:2px; }
+
+        .panels { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+        .panel { background:#12121a; border:1px solid #1e1e2e; border-radius:12px; padding:22px; }
+        .panel-title { font-size:0.9rem; font-weight:600; color:#00ff99; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+
+        .upload-area { border:2px dashed #2a2a3a; border-radius:10px; padding:25px; text-align:center; cursor:pointer; transition:all 0.2s; margin-bottom:12px; }
+        .upload-area:hover { border-color:#00ff99; background:#00ff9905; }
+        #imgPreview { width:100%; border-radius:8px; margin-bottom:12px; display:none; }
+
+        .btn { padding:10px 18px; border:none; border-radius:8px; cursor:pointer; font-size:0.88rem; font-weight:600; transition:all 0.2s; width:100%; }
+        .btn-primary { background:#00ff99; color:#000; }
+        .btn-primary:hover { background:#00cc77; transform:translateY(-1px); }
+        .btn-primary:disabled { background:#222; color:#555; cursor:not-allowed; transform:none; }
+        .btn-secondary { background:#1e1e2e; color:#aaa; border:1px solid #2a2a3a; margin-top:8px; }
+        .btn-secondary:hover { background:#2a2a3a; color:#fff; }
+
+        .result { background:#0a0a0f; border:1px solid #1e1e2e; border-radius:10px; padding:18px; margin-top:12px; display:none; }
+        .result.alert-match { border-color:#ff4444; background:#ff444408; }
+        .result-plate { font-size:2rem; font-weight:700; letter-spacing:4px; color:#00ff99; margin-bottom:8px; }
+        .result-plate.alert { color:#ff4444; }
+
+        .badges { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+        .badge { padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600; }
+        .b-green  { background:#00ff9920; color:#00ff99; }
+        .b-red    { background:#ff444420; color:#ff4444; }
+        .b-blue   { background:#4488ff20; color:#4488ff; }
+        .b-yellow { background:#ffaa0020; color:#ffaa00; }
+
+        .conf-section {
+            background:#0f0f1a; border:1px solid #1e1e2e;
+            border-radius:8px; padding:12px; margin-bottom:10px;
+        }
+        .conf-title { color:#444; font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+        .conf-row { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+        .conf-label { color:#666; font-size:0.8rem; width:120px; flex-shrink:0; }
+        .conf-bar-wrap { flex:1; background:#1e1e2e; border-radius:4px; height:6px; }
+        .conf-bar { height:6px; border-radius:4px; transition:width 0.5s; }
+        .conf-bar.cnn  { background:#00ff99; }
+        .conf-bar.yolo { background:#4488ff; }
+        .conf-val { color:#fff; font-size:0.8rem; width:40px; text-align:right; flex-shrink:0; }
+
+        .alert-banner { background:#ff444415; border:1px solid #ff444430; border-radius:6px; padding:10px; color:#ff4444; font-size:0.85rem; margin-bottom:10px; display:none; }
+        #resultImg { width:100%; border-radius:6px; margin-top:8px; display:none; }
+
+        .steps-title { color:#444; font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; margin-top:12px; }
+        .steps-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+        .step-item { text-align:center; }
+        .step-item img { width:100%; border-radius:6px; border:1px solid #1e1e2e; }
+        .step-label { color:#444; font-size:0.7rem; margin-top:4px; }
+
+        table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+        th { padding:10px 12px; color:#444; font-size:0.75rem; text-transform:uppercase; border-bottom:1px solid #1e1e2e; text-align:left; }
+        td { padding:10px 12px; border-bottom:1px solid #0f0f1a; color:#ccc; }
+        tr:hover td { background:#ffffff05; }
+        .plate-cell { font-family:monospace; color:#fff; letter-spacing:2px; }
+
+        .spinner { display:none; width:22px; height:22px; border:3px solid #1e1e2e; border-top-color:#00ff99; border-radius:50%; animation:spin 0.8s linear infinite; margin:8px auto; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        .webcam-link { display:block; text-align:center; padding:12px; background:#4488ff10; border:1px dashed #4488ff33; border-radius:8px; color:#4488ff; text-decoration:none; font-size:0.85rem; font-weight:600; margin-top:10px; transition:all 0.2s; }
+        .webcam-link:hover { background:#4488ff20; border-color:#4488ff; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">ANPR <span>System</span></div>
+    <div class="nav-links">
+        <a href="/" class="active">Dashboard</a>
+        <a href="/webcam">📹 Live Camera</a>
+        <a href="/watchlist">Watchlist</a>
+        <a href="/logs">Logs</a>
+        <a href="/about">About</a>
+<a href="/detect_video">🎥 Video</a>
+        {% if role == 'admin' %}<a href="/users">👥 Users</a>{% endif %}
+    </div>
+    <div class="nav-right">
+        <span class="dev-badge">⚡ Dev Phase</span>
+        <span class="user-badge">👤 {{ user }}</span>
+        <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">ANPR — Nepali Embossed Number Plate Watchlist Alert & Logging System</div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-icon si-green">📋</div>
+            <div><div class="stat-val">{{ total_logs }}</div><div class="stat-lbl">Total Detections</div></div>
+        </div>
+        <div class="stat">
+            <div class="stat-icon si-red">⚠️</div>
+            <div><div class="stat-val">{{ total_alerts }}</div><div class="stat-lbl">Watchlist Alerts</div></div>
+        </div>
+        <div class="stat">
+            <div class="stat-icon si-blue">🚗</div>
+            <div><div class="stat-val">{{ total_watchlist }}</div><div class="stat-lbl">Vehicles Watched</div></div>
+        </div>
+        <div class="stat">
+            <div class="stat-icon si-yellow">🎯</div>
+            <div><div class="stat-val">98.6%</div><div class="stat-lbl">CNN Accuracy</div></div>
+        </div>
+    </div>
+
+    <div class="panels">
+        <!-- DETECTION PANEL -->
+        <div class="panel">
+            <div class="panel-title">🔍 Plate Detection</div>
+
+            <div class="upload-area" id="uploadArea"
+                 onclick="document.getElementById('fileInput').click()">
+                <div style="font-size:2rem;margin-bottom:8px">📷</div>
+                <p style="color:#555;font-size:0.9rem">Click or drag & drop image</p>
+                <p style="color:#333;font-size:0.8rem;margin-top:4px">JPG, PNG supported</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display:none">
+            <img id="imgPreview" alt="Preview">
+            <div class="spinner" id="spinner"></div>
+
+            <button class="btn btn-primary" id="detectBtn"
+                    onclick="detectPlate()" disabled>
+                Detect Number Plate
+            </button>
+            <button class="btn btn-secondary" id="resetBtn"
+                    onclick="resetDetection()" style="display:none">
+                🔄 Detect Another Image
+            </button>
+
+            <!-- RESULT BOX -->
+            <div class="result" id="resultBox">
+                <div class="result-plate" id="resultPlate"></div>
+
+                <div class="badges">
+                    <span class="badge" id="matchBadge"></span>
+                    <span class="badge b-blue" id="timeBadge"></span>
+                </div>
+
+                <!-- CONFIDENCE BARS -->
+                <div class="conf-section">
+                    <div class="conf-title">Detection Confidence</div>
+                    <div class="conf-row">
+                        <span class="conf-label">CNN Recognition</span>
+                        <div class="conf-bar-wrap">
+                            <div class="conf-bar cnn" id="cnnBar" style="width:0%"></div>
+                        </div>
+                        <span class="conf-val" id="cnnVal">0%</span>
+                    </div>
+                    <div class="conf-row">
+                        <span class="conf-label">YOLO Plate Detection</span>
+                        <div class="conf-bar-wrap">
+                            <div class="conf-bar yolo" id="yoloBar" style="width:0%"></div>
+                        </div>
+                        <span class="conf-val" id="yoloVal">0%</span>
+                    </div>
+                </div>
+
+                <div class="alert-banner" id="alertBanner"></div>
+                <img id="resultImg" alt="Detection Result">
+
+                <!-- PROCESSING STEPS -->
+                <div class="steps-title">Processing Steps</div>
+                <div class="steps-grid" id="stepsGrid"></div>
+            </div>
+
+            <a href="/webcam" class="webcam-link">📹 Switch to Live Webcam Detection</a>
+        </div>
+
+        <!-- RECENT LOGS -->
+        <div class="panel">
+            <div class="panel-title">📜 Recent Detections</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Plate</th>
+                        <th>Confidence</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                    <tr>
+                        <td class="plate-cell">{{ log.plate }}</td>
+                        <td>{{ "%.1f"|format(log.confidence) }}%</td>
+                        <td>
+                            {% if log.matched %}
+                            <span class="badge b-red">⚠ ALERT</span>
+                            {% else %}
+                            <span class="badge b-green">✓ Clear</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:#444;font-size:0.8rem">{{ log.timestamp }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not recent_logs %}
+                    <tr><td colspan="4" style="text-align:center;color:#333;padding:30px">
+                        No detections yet
+                    </td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            <a href="/logs" style="display:block;text-align:right;color:#00ff99;font-size:0.8rem;margin-top:12px;text-decoration:none">
+                View all logs →
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+const fileInput  = document.getElementById('fileInput');
+const imgPreview = document.getElementById('imgPreview');
+const detectBtn  = document.getElementById('detectBtn');
+const uploadArea = document.getElementById('uploadArea');
+const resetBtn   = document.getElementById('resetBtn');
+
+fileInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        imgPreview.src = e.target.result;
+        imgPreview.style.display = 'block';
+        detectBtn.disabled = false;
+        uploadArea.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+});
+
+uploadArea.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#00ff99';
+});
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.borderColor = '#2a2a3a';
+});
+uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    fileInput.files = e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
+});
+
+function resetDetection() {
+    imgPreview.style.display  = 'none';
+    imgPreview.src            = '';
+    uploadArea.style.display  = 'block';
+    detectBtn.disabled        = true;
+    detectBtn.style.display   = 'block';
+    detectBtn.textContent     = 'Detect Number Plate';
+    resetBtn.style.display    = 'none';
+    document.getElementById('resultBox').style.display = 'none';
+    document.getElementById('stepsGrid').innerHTML     = '';
+    document.getElementById('cnnBar').style.width      = '0%';
+    document.getElementById('yoloBar').style.width     = '0%';
+    document.getElementById('cnnVal').textContent      = '0%';
+    document.getElementById('yoloVal').textContent     = '0%';
+    fileInput.value = '';
+}
+
+async function detectPlate() {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    detectBtn.disabled    = true;
+    detectBtn.textContent = 'Detecting...';
+    document.getElementById('spinner').style.display    = 'block';
+    document.getElementById('resultBox').style.display  = 'none';
+
+    const fd = new FormData();
+    fd.append('image', file);
+
+    try {
+        const res  = await fetch('/detect', { method:'POST', body:fd });
+        const data = await res.json();
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        const resultBox   = document.getElementById('resultBox');
+        const resultPlate = document.getElementById('resultPlate');
+        const alertBanner = document.getElementById('alertBanner');
+        const resultImg   = document.getElementById('resultImg');
+
+        // Plate text
+        resultPlate.textContent = data.plate;
+
+        // Time badge
+        document.getElementById('timeBadge').textContent = data.timestamp;
+
+        // CNN confidence bar
+        const cnnConf = data.confidence || 0;
+        document.getElementById('cnnBar').style.width  = cnnConf + '%';
+        document.getElementById('cnnVal').textContent  = cnnConf + '%';
+
+        // YOLO confidence bar
+        const yoloConf = data.det_conf || 0;
+        document.getElementById('yoloBar').style.width = yoloConf + '%';
+        document.getElementById('yoloVal').textContent = yoloConf + '%';
+
+        // Match status
+        if (data.matched) {
+            resultBox.classList.add('alert-match');
+            resultPlate.classList.add('alert');
+            document.getElementById('matchBadge').className   = 'badge b-red';
+            document.getElementById('matchBadge').textContent = '⚠ WATCHLIST MATCH';
+            alertBanner.style.display = 'block';
+            alertBanner.textContent   = '🚨 ALERT! Owner: ' +
+                (data.info?.owner || 'Unknown') +
+                ' | Reason: ' + (data.info?.reason || 'Unknown');
+        } else {
+            resultBox.classList.remove('alert-match');
+            resultPlate.classList.remove('alert');
+            document.getElementById('matchBadge').className   = 'badge b-green';
+            document.getElementById('matchBadge').textContent = '✓ Not in Watchlist';
+            alertBanner.style.display = 'none';
+        }
+
+        // Annotated image
+        if (data.image) {
+            resultImg.src          = 'data:image/jpeg;base64,' + data.image;
+            resultImg.style.display = 'block';
+        }
+
+        // Processing steps
+        if (data.steps) {
+            const grid   = document.getElementById('stepsGrid');
+            grid.innerHTML = '';
+            const labels = {
+                grayscale : '1. Grayscale',
+                clahe     : '2. Contrast Enhanced',
+                binary    : '3. Thresholded',
+                annotated : '4. Character Detection'
+            };
+            for (const [key, b64] of Object.entries(data.steps)) {
+                if (labels[key]) {
+                    grid.innerHTML += `
+                        <div class="step-item">
+                            <img src="data:image/jpeg;base64,${b64}"
+                                 alt="${labels[key]}">
+                            <div class="step-label">${labels[key]}</div>
+                        </div>`;
+                }
+            }
+        }
+
+        resultBox.style.display  = 'block';
+        resetBtn.style.display   = 'block';
+        detectBtn.style.display  = 'none';
+
+    } catch(err) {
+        alert('Detection failed: ' + err.message);
+    } finally {
+        detectBtn.disabled    = false;
+        detectBtn.textContent = 'Detect Number Plate';
+        document.getElementById('spinner').style.display = 'none';
+    }
+}
+</script>
+</body>
+</html>

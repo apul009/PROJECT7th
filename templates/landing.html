@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANPR System - Nepali Embossed Number Plate Recognition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#0a0a0f; color:#e0e0e0; font-family:'Inter',sans-serif; min-height:100vh; overflow-x:hidden; }
+
+        /* Animated background grid */
+        .bg-grid {
+            position:fixed; inset:0; z-index:0;
+            background-image:
+                linear-gradient(#00ff9906 1px, transparent 1px),
+                linear-gradient(90deg, #00ff9906 1px, transparent 1px);
+            background-size:60px 60px;
+            animation:gridMove 25s linear infinite;
+        }
+        @keyframes gridMove { 0%{transform:translateY(0)} 100%{transform:translateY(60px)} }
+
+        .bg-glow {
+            position:fixed; inset:0; z-index:0;
+            background:
+                radial-gradient(ellipse at 20% 30%, #00ff9912 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, #4488ff0e 0%, transparent 50%);
+        }
+
+        /* NAVBAR */
+        .navbar {
+            position:fixed; top:0; left:0; right:0; z-index:100;
+            background:#0a0a0fcc;
+            backdrop-filter:blur(20px);
+            border-bottom:1px solid #00ff9922;
+            padding:0 40px; height:65px;
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .nav-logo {
+            font-family:'Orbitron',monospace;
+            font-size:1.3rem; font-weight:900;
+            color:#00ff99; letter-spacing:4px;
+        }
+        .nav-logo span { color:#fff; }
+        .nav-actions { display:flex; gap:12px; align-items:center; }
+        .btn-nav-login {
+            background:transparent; border:1px solid #00ff9944;
+            color:#00ff99; padding:8px 22px; border-radius:6px;
+            text-decoration:none; font-size:0.85rem; font-weight:600;
+            transition:all 0.2s; letter-spacing:1px;
+        }
+        .btn-nav-login:hover { background:#00ff9915; border-color:#00ff99; }
+        .btn-nav-enter {
+            background:#00ff99; color:#000;
+            padding:8px 22px; border-radius:6px;
+            text-decoration:none; font-size:0.85rem; font-weight:700;
+            transition:all 0.2s; letter-spacing:1px; border:none;
+        }
+        .btn-nav-enter:hover { background:#00cc77; transform:translateY(-1px); }
+
+        /* HERO */
+        .hero {
+            position:relative; z-index:1;
+            min-height:100vh;
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            text-align:center; padding:80px 40px 60px;
+        }
+        .hero-badge {
+            background:#00ff9915; border:1px solid #00ff9933;
+            color:#00ff99; padding:6px 18px; border-radius:20px;
+            font-size:0.78rem; letter-spacing:2px; text-transform:uppercase;
+            margin-bottom:30px; display:inline-block;
+            animation:fadeInDown 0.6s ease;
+        }
+        @keyframes fadeInDown {
+            from{transform:translateY(-20px);opacity:0}
+            to{transform:translateY(0);opacity:1}
+        }
+        .hero-title {
+            font-family:'Orbitron',monospace;
+            font-size:clamp(2rem, 5vw, 4rem);
+            font-weight:900; line-height:1.15;
+            color:#fff; margin-bottom:10px;
+            animation:fadeInUp 0.7s ease 0.1s both;
+        }
+        .hero-title span { color:#00ff99; }
+        .hero-subtitle {
+            font-size:clamp(1rem, 2vw, 1.4rem);
+            color:#00ff9988; font-family:'Orbitron',monospace;
+            letter-spacing:3px; margin-bottom:25px;
+            animation:fadeInUp 0.7s ease 0.2s both;
+        }
+        @keyframes fadeInUp {
+            from{transform:translateY(20px);opacity:0}
+            to{transform:translateY(0);opacity:1}
+        }
+        .hero-desc {
+            max-width:680px; color:#666;
+            font-size:1rem; line-height:1.8;
+            margin-bottom:45px;
+            animation:fadeInUp 0.7s ease 0.3s both;
+        }
+        .hero-actions {
+            display:flex; gap:15px; justify-content:center;
+            flex-wrap:wrap; margin-bottom:60px;
+            animation:fadeInUp 0.7s ease 0.4s both;
+        }
+        .btn-hero-primary {
+            background:#00ff99; color:#000;
+            padding:14px 36px; border-radius:8px;
+            text-decoration:none; font-size:1rem; font-weight:700;
+            letter-spacing:1px; transition:all 0.2s;
+            box-shadow:0 0 30px #00ff9940;
+        }
+        .btn-hero-primary:hover {
+            background:#00cc77; transform:translateY(-2px);
+            box-shadow:0 0 50px #00ff9960;
+        }
+        .btn-hero-secondary {
+            background:transparent; color:#aaa;
+            padding:14px 36px; border-radius:8px;
+            text-decoration:none; font-size:1rem; font-weight:600;
+            border:1px solid #2a2a3a; letter-spacing:1px;
+            transition:all 0.2s;
+        }
+        .btn-hero-secondary:hover { border-color:#00ff9944; color:#fff; }
+
+        /* STATS BAR */
+        .stats-bar {
+            display:flex; gap:50px; justify-content:center;
+            flex-wrap:wrap; padding:30px 40px;
+            border-top:1px solid #1e1e2e;
+            border-bottom:1px solid #1e1e2e;
+            background:#0d0d16;
+            position:relative; z-index:1;
+            animation:fadeInUp 0.7s ease 0.5s both;
+        }
+        .stat-item { text-align:center; }
+        .stat-num {
+            font-family:'Orbitron',monospace;
+            font-size:2rem; font-weight:900; color:#00ff99;
+        }
+        .stat-lbl { color:#444; font-size:0.8rem; margin-top:4px; letter-spacing:1px; }
+
+        /* FEATURES */
+        .features {
+            position:relative; z-index:1;
+            padding:80px 40px; max-width:1200px; margin:0 auto;
+        }
+        .section-title {
+            text-align:center; font-size:1.8rem; font-weight:700;
+            color:#fff; margin-bottom:8px;
+        }
+        .section-sub {
+            text-align:center; color:#444; font-size:0.9rem;
+            margin-bottom:50px;
+        }
+        .features-grid {
+            display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+            gap:20px;
+        }
+        .feature-card {
+            background:#12121a; border:1px solid #1e1e2e;
+            border-radius:12px; padding:25px;
+            transition:all 0.3s;
+        }
+        .feature-card:hover {
+            border-color:#00ff9933;
+            transform:translateY(-4px);
+            box-shadow:0 10px 40px #00ff9910;
+        }
+        .feature-icon { font-size:2rem; margin-bottom:15px; }
+        .feature-title { font-size:1rem; font-weight:600; color:#fff; margin-bottom:8px; }
+        .feature-desc { color:#555; font-size:0.88rem; line-height:1.6; }
+
+        /* PIPELINE SECTION */
+        .pipeline-section {
+            position:relative; z-index:1;
+            padding:60px 40px; background:#0d0d16;
+            border-top:1px solid #1e1e2e;
+        }
+        .pipeline-steps {
+            display:flex; align-items:center; justify-content:center;
+            gap:0; flex-wrap:wrap; max-width:1000px; margin:40px auto 0;
+        }
+        .pipe-item {
+            text-align:center; padding:20px 15px;
+            flex:1; min-width:120px;
+        }
+        .pipe-icon { font-size:1.8rem; margin-bottom:10px; }
+        .pipe-label { color:#00ff99; font-size:0.8rem; font-weight:600; letter-spacing:1px; }
+        .pipe-desc { color:#333; font-size:0.72rem; margin-top:4px; }
+        .pipe-arrow { color:#2a2a3a; font-size:1.5rem; flex-shrink:0; }
+
+        /* TECH STACK */
+        .tech-section {
+            position:relative; z-index:1;
+            padding:60px 40px; max-width:1000px; margin:0 auto;
+        }
+        .tech-grid {
+            display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+            gap:15px; margin-top:40px;
+        }
+        .tech-item {
+            background:#12121a; border:1px solid #1e1e2e;
+            border-radius:8px; padding:15px; text-align:center;
+            transition:border-color 0.2s;
+        }
+        .tech-item:hover { border-color:#00ff9933; }
+        .tech-name { color:#fff; font-size:0.85rem; font-weight:600; }
+        .tech-role { color:#444; font-size:0.75rem; margin-top:4px; }
+
+        /* NOTICE */
+        .dev-notice {
+            position:relative; z-index:1;
+            background:#ff990010; border-top:1px solid #ff990030;
+            padding:20px 40px; text-align:center;
+        }
+        .dev-notice p { color:#666; font-size:0.82rem; }
+        .dev-notice span { color:#ff9900; font-weight:600; }
+
+        /* FOOTER */
+        .footer {
+            position:relative; z-index:1;
+            background:#0a0a0f; border-top:1px solid #1e1e2e;
+            padding:30px 40px; text-align:center;
+        }
+        .footer p { color:#333; font-size:0.82rem; }
+        .footer span { color:#00ff9955; }
+
+        /* SCROLL ANIMATIONS */
+        .fade-in {
+            opacity:0; transform:translateY(20px);
+            transition:opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="nav-logo">ANPR <span>System</span></div>
+    <div class="nav-actions">
+        <a href="/about" class="btn-nav-login">About</a>
+        <a href="/login" class="btn-nav-enter">Sign In</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-badge">Initial Development Phase - TU CSIT Final Year Project</div>
+    <div class="hero-title">
+        Automatic Number Plate<br>
+        <span>Recognition System</span>
+    </div>
+    <div class="hero-subtitle">Nepali Embossed Plates</div>
+    <p class="hero-desc">
+        A complete ANPR surveillance system designed specifically for Nepali embossed
+        vehicle number plates. Detects, recognizes, and matches plates against a
+        watchlist in real time using a CNN implemented from scratch.
+    </p>
+    <div class="hero-actions">
+        <a href="/login" class="btn-hero-primary">Access System</a>
+        <a href="/about" class="btn-hero-secondary">Learn More</a>
+    </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar fade-in">
+    <div class="stat-item">
+        <div class="stat-num">98.6%</div>
+        <div class="stat-lbl">CNN Accuracy</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-num">95.8%</div>
+        <div class="stat-lbl">Plate Detection mAP50</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-num">95.5%</div>
+        <div class="stat-lbl">Character Detection mAP50</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-num">28</div>
+        <div class="stat-lbl">Character Classes</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-num">3</div>
+        <div class="stat-lbl">Input Modes</div>
+    </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features fade-in">
+    <div class="section-title">System Features</div>
+    <div class="section-sub">Everything needed for vehicle surveillance and watchlist management</div>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <div class="feature-title">CNN From Scratch</div>
+            <div class="feature-desc">Character recognition implemented entirely in NumPy without any deep learning frameworks. Convolution, pooling, backpropagation all custom built.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-title">Dual YOLO Detection</div>
+            <div class="feature-desc">Two fine-tuned YOLOv8s models. First detects plate regions, second detects individual character bounding boxes within the plate.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚨</div>
+            <div class="feature-title">Real-Time Alerts</div>
+            <div class="feature-desc">Instant dashboard popup, audible alert sound, and official HTML email with detection image dispatched to all registered authorities.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📹</div>
+            <div class="feature-title">Multiple Input Modes</div>
+            <div class="feature-desc">Supports image upload, video file upload with annotated output video generation, and live webcam stream detection.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📋</div>
+            <div class="feature-title">Watchlist Management</div>
+            <div class="feature-desc">Full CRUD operations for managing watchlisted vehicles. Add owner details, reason for flagging, and track all detection history.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-title">Secure Access Control</div>
+            <div class="feature-desc">Role-based authentication with Admin and User roles. SHA-256 password hashing. All routes protected by login decorator.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-title">Detection Logging</div>
+            <div class="feature-desc">Every detection logged with plate text, confidence, timestamp, annotated image, and source. Export all logs as CSV for reporting.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📧</div>
+            <div class="feature-title">Authority Notification</div>
+            <div class="feature-desc">Register multiple authority email addresses. Official alert emails with detection images automatically dispatched via Gmail SMTP.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-title">Processing Visualization</div>
+            <div class="feature-desc">Dashboard shows all four preprocessing steps: grayscale, CLAHE enhancement, thresholding, and character detection bounding boxes.</div>
+        </div>
+    </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="pipeline-section fade-in">
+    <div class="section-title">Detection Pipeline</div>
+    <div class="section-sub">How the system processes each vehicle image</div>
+    <div class="pipeline-steps">
+        <div class="pipe-item">
+            <div class="pipe-icon">📷</div>
+            <div class="pipe-label">Input</div>
+            <div class="pipe-desc">Image / Video / Webcam</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-item">
+            <div class="pipe-icon">🎯</div>
+            <div class="pipe-label">Plate YOLO</div>
+            <div class="pipe-desc">Locate plate region</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-item">
+            <div class="pipe-icon">⚙️</div>
+            <div class="pipe-label">Preprocess</div>
+            <div class="pipe-desc">CLAHE + Threshold</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-item">
+            <div class="pipe-icon">✂️</div>
+            <div class="pipe-label">Char YOLO</div>
+            <div class="pipe-desc">Locate characters</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-item">
+            <div class="pipe-icon">🧠</div>
+            <div class="pipe-label">CNN</div>
+            <div class="pipe-desc">Recognize each char</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-item">
+            <div class="pipe-icon">🔔</div>
+            <div class="pipe-label">Alert</div>
+            <div class="pipe-desc">Watchlist + Log</div>
+        </div>
+    </div>
+</section>
+
+<!-- TECH STACK -->
+<section class="tech-section fade-in">
+    <div class="section-title">Technology Stack</div>
+    <div class="section-sub">Built with standard and custom components</div>
+    <div class="tech-grid">
+        <div class="tech-item">
+            <div class="tech-name">NumPy</div>
+            <div class="tech-role">CNN from scratch</div>
+        </div>
+        <div class="tech-item">
+            <div class="tech-name">YOLOv8s</div>
+            <div class="tech-role">Object detection</div>
+        </div>
+        <div class="tech-item">
+            <div class="tech-name">OpenCV</div>
+            <div class="tech-role">Image processing</div>
+        </div>
+        <div class="tech-item">
+            <div class="tech-name">Flask</div>
+            <div class="tech-role">Web framework</div>
+        </div>
+        <div class="tech-item">
+            <div class="tech-name">SQLite</div>
+            <div class="tech-role">Database</div>
+        </div>
+        <div class="tech-item">
+            <div class="tech-name">Gmail SMTP</div>
+            <div class="tech-role">Email alerts</div>
+        </div>
+        <div class="tech-item">
+            <div class="tech-name">HTML/CSS/JS</div>
+            <div class="tech-role">Frontend</div>
+        </div>
+        <div class="tech-item">
+            <div class="tech-name">Python 3.11</div>
+            <div class="tech-role">Backend language</div>
+        </div>
+    </div>
+</section>
+
+<!-- DEV NOTICE -->
+<div class="dev-notice fade-in">
+    <p><span>Initial Development Phase.</span> This system is intended for academic and demonstration purposes only. For authorized use only. All detections are logged locally.</p>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <p>Watchlist Alert and Logging System using ANPR for Nepali Embossed Number Plates<br>
+    <span>Tribhuvan University - CSIT Final Year Project</span><br>
+    Apul Baral | Kritiz Sapkota | Gagan Sapkota</p>
+</footer>
+
+<script>
+// Scroll fade-in animation
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(el => {
+        if (el.isIntersecting) el.target.classList.add('visible');
+    });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

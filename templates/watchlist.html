@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANPR — Watchlist</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@300;400;500;600&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#0a0a0f; color:#e0e0e0; font-family:'Inter',sans-serif; min-height:100vh; }
+
+        .navbar { background:#12121a; border-bottom:1px solid #00ff9922; padding:0 30px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; }
+        .logo { font-family:'Orbitron',monospace; font-size:1.2rem; font-weight:700; color:#00ff99; letter-spacing:3px; }
+        .logo span { color:#fff; }
+        .nav-links { display:flex; align-items:center; gap:5px; flex-wrap:nowrap; }
+        .nav-links a { color:#666; text-decoration:none; padding:8px 12px; border-radius:6px; font-size:0.82rem; transition:all 0.2s; white-space:nowrap; }
+        .nav-links a:hover { color:#00ff99; background:#00ff9910; }
+        .nav-links a.active { color:#00ff99; background:#00ff9915; }
+        .nav-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        .user-badge { background:#00ff9915; border:1px solid #00ff9933; color:#00ff99; padding:5px 12px; border-radius:20px; font-size:0.8rem; white-space:nowrap; }
+        .dev-badge { background:#ff990015; border:1px solid #ff990033; color:#ff9900; padding:5px 10px; border-radius:20px; font-size:0.72rem; animation:pulse 2s infinite; white-space:nowrap; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        .btn-logout { background:#ff444420; border:1px solid #ff444440; color:#ff4444; padding:6px 12px; border-radius:6px; font-size:0.8rem; text-decoration:none; white-space:nowrap; }
+        .btn-logout:hover { background:#ff444430; }
+
+        .container { padding:30px; max-width:1300px; margin:0 auto; }
+        .page-title { font-size:1.8rem; font-weight:700; margin-bottom:5px; color:#fff; }
+        .page-subtitle { color:#666; margin-bottom:30px; font-size:0.9rem; }
+        .panel { background:#12121a; border:1px solid #1e1e2e; border-radius:12px; padding:25px; margin-bottom:20px; }
+        .panel-title { font-size:1rem; font-weight:600; color:#00ff99; margin-bottom:20px; }
+        .form-grid { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end; }
+        .form-group label { display:block; color:#666; font-size:0.8rem; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px; }
+        .form-group input { width:100%; padding:10px 14px; background:#0a0a0f; border:1px solid #2a2a3a; border-radius:8px; color:#fff; font-size:0.95rem; transition:border-color 0.2s; }
+        .form-group input:focus { outline:none; border-color:#00ff99; }
+        .btn { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-size:0.9rem; font-weight:600; transition:all 0.2s; }
+        .btn-primary { background:#00ff99; color:#000; }
+        .btn-primary:hover { background:#00cc77; transform:translateY(-1px); }
+        .btn-danger { background:#ff444420; color:#ff4444; border:1px solid #ff444440; }
+        .btn-danger:hover { background:#ff444430; }
+        .btn-edit { background:#4488ff20; color:#4488ff; border:1px solid #4488ff40; }
+        .btn-edit:hover { background:#4488ff30; }
+        .btn-save { background:#00ff9920; color:#00ff99; border:1px solid #00ff9940; }
+        .btn-save:hover { background:#00ff9930; }
+        table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+        th { text-align:left; padding:12px 15px; color:#666; font-weight:600; border-bottom:1px solid #1e1e2e; font-size:0.8rem; text-transform:uppercase; }
+        td { padding:12px 15px; border-bottom:1px solid #0f0f1a; color:#ccc; }
+        tr:hover td { background:#ffffff05; }
+        .plate-cell { font-family:monospace; font-size:1rem; color:#fff; letter-spacing:2px; }
+        .edit-row { display:none; }
+        .edit-row td { background:#0a0a0f; padding:15px; }
+        .edit-form-grid { display:grid; grid-template-columns:1fr 1fr 1fr auto auto; gap:10px; align-items:center; }
+        .edit-form-grid input { padding:8px 12px; background:#12121a; border:1px solid #2a2a3a; border-radius:6px; color:#fff; font-size:0.9rem; }
+        .edit-form-grid input:focus { outline:none; border-color:#00ff99; }
+        .empty-state { text-align:center; padding:50px; color:#444; font-size:1rem; }
+        .count-badge { background:#00ff9920; color:#00ff99; padding:3px 10px; border-radius:20px; font-size:0.8rem; margin-left:10px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">ANPR <span>System</span></div>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/webcam">📹 Live</a>
+        <a href="/detect_video">🎥 Video</a>
+        <a href="/watchlist" class="active">Watchlist</a>
+        <a href="/logs">Logs</a>
+        <a href="/about">About</a>
+        {% if role == 'admin' %}<a href="/users">👥 Users</a>{% endif %}
+    </div>
+    <div class="nav-right">
+        <span class="dev-badge">⚡ Dev Phase</span>
+        <span class="user-badge">👤 {{ user }}</span>
+        <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-title">
+        Watchlist Management
+        <span class="count-badge">{{ entries|length }} vehicles</span>
+    </div>
+    <div class="page-subtitle">Add, edit or remove vehicles from the alert watchlist</div>
+
+    <div class="panel">
+        <div class="panel-title">➕ Add Vehicle to Watchlist</div>
+        <form method="POST" action="/watchlist/add">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Plate Number *</label>
+                    <input name="plate" placeholder="e.g. BA1PA1234"
+                           required style="text-transform:uppercase">
+                </div>
+                <div class="form-group">
+                    <label>Owner Name</label>
+                    <input name="owner" placeholder="e.g. Ram Bahadur">
+                </div>
+                <div class="form-group">
+                    <label>Reason</label>
+                    <input name="reason" placeholder="e.g. Stolen vehicle">
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">Add Vehicle</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">🚗 Watchlist Entries</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Plate Number</th>
+                    <th>Owner</th>
+                    <th>Reason</th>
+                    <th>Added</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in entries %}
+                <tr id="view-{{ e.id }}">
+                    <td>{{ e.id }}</td>
+                    <td class="plate-cell">{{ e.plate }}</td>
+                    <td>{{ e.owner or '—' }}</td>
+                    <td>{{ e.reason or '—' }}</td>
+                    <td>{{ e.added or '—' }}</td>
+                    <td style="display:flex;gap:8px;">
+                        <button class="btn btn-edit"
+                            onclick="toggleEdit({{ e.id }})">Edit</button>
+                        <a href="/watchlist/delete/{{ e.id }}"
+                           onclick="return confirm('Remove {{ e.plate }} from watchlist?')"
+                           class="btn btn-danger">Delete</a>
+                    </td>
+                </tr>
+                <tr class="edit-row" id="edit-{{ e.id }}">
+                    <td colspan="6">
+                        <form method="POST" action="/watchlist/update/{{ e.id }}">
+                            <div class="edit-form-grid">
+                                <input name="plate" value="{{ e.plate }}"
+                                       style="text-transform:uppercase">
+                                <input name="owner" value="{{ e.owner or '' }}"
+                                       placeholder="Owner">
+                                <input name="reason" value="{{ e.reason or '' }}"
+                                       placeholder="Reason">
+                                <button type="submit" class="btn btn-save">Save</button>
+                                <button type="button" class="btn btn-edit"
+                                    onclick="toggleEdit({{ e.id }})">Cancel</button>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not entries %}
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        No vehicles in watchlist yet.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function toggleEdit(id) {
+    const viewRow = document.getElementById('view-' + id);
+    const editRow = document.getElementById('edit-' + id);
+    const isHidden = editRow.style.display === 'none' || editRow.style.display === '';
+    editRow.style.display = isHidden ? 'table-row' : 'none';
+    viewRow.style.opacity = isHidden ? '0.4' : '1';
+}
+</script>
+</body>
+</html>

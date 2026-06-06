@@ -1,0 +1,29 @@
+# Large model files
+model.pkl
+best.pt
+char_best.pt
+label_map.pkl
+detector.pkl
+
+# Database
+database.db
+logs_export.csv
+
+# Upload folders
+uploads/
+static/uploads/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# VS Code
+.vscode/
+.history/
+
+# Video files
+*.mp4
+*.avi
+*.mov
