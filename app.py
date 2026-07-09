@@ -548,7 +548,7 @@ def get_camera():
     return camera
 
 def generate_frames():
-    global latest_detection, camera_active
+    global latest_detection, camera_active, camera
     camera_active = True
     cam = get_camera()
 
@@ -556,66 +556,85 @@ def generate_frames():
     DETECT_EVERY = 15
     MIN_CONF     = 0.5
 
-    while camera_active:
-        success, frame = cam.read()
-        if not success:
-            break
+    try:
+        while camera_active:
+            if camera is None:
+                break
 
-        frame_count += 1
-        annotated = frame.copy()
+            success, frame = cam.read()
+            if not success or not camera_active:
+                break
 
-        if frame_count % DETECT_EVERY == 0:
-            plate_img, coords, det_conf = detect_plate_region(frame)
+            frame_count += 1
+            annotated = frame.copy()
 
-            if det_conf >= MIN_CONF:
-                plate_text, confidence, steps, char_boxes = \
-                    segment_and_recognize(plate_img, model, IDX_TO_CHAR)
+            if frame_count % DETECT_EVERY == 0 and camera_active:
+                try:
+                    plate_img, coords, det_conf = detect_plate_region(frame)
 
-                if (plate_text and
-                    plate_text not in ["NOT DETECTED", "NO CHARS", ""] and
-                    len(plate_text) >= 4 and
-                    confidence >= 70.0):
+                    if det_conf >= MIN_CONF:
+                        plate_text, confidence, steps, char_boxes = \
+                            segment_and_recognize(plate_img, model, IDX_TO_CHAR)
 
-                    matched   = check_watchlist(plate_text)
-                    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    filename  = f"cam_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-                    annotated = draw_plate_box(frame.copy(), coords,
-                                               plate_text,
-                                               matched is not None,
-                                               confidence)
-                    img_path  = save_image(annotated, filename)
+                        if (plate_text and
+                            plate_text not in ["NOT DETECTED","NO CHARS",""] and
+                            len(plate_text) >= 4 and
+                            confidence >= 70.0):
 
-                    with get_db() as db:
-                        db.execute(
-                            "INSERT INTO logs(plate,matched,confidence,timestamp,image_path,detected_by) VALUES(?,?,?,?,?,?)",
-                            (plate_text, 1 if matched else 0,
-                             confidence, timestamp, img_path, 'webcam'))
+                            matched   = check_watchlist(plate_text)
+                            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            filename  = f"cam_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                            annotated = draw_plate_box(frame.copy(), coords,
+                                                       plate_text,
+                                                       matched is not None,
+                                                       confidence)
+                            img_path  = save_image(annotated, filename)
 
-                    latest_detection = {
-                        'plate'     : plate_text,
-                        'confidence': confidence,
-                        'matched'   : matched is not None,
-                        'info'      : matched,
-                        'timestamp' : timestamp
-                    }
+                            with get_db() as db:
+                                db.execute(
+                                    "INSERT INTO logs(plate,matched,confidence,timestamp,image_path,detected_by) VALUES(?,?,?,?,?,?)",
+                                    (plate_text, 1 if matched else 0,
+                                     confidence, timestamp, img_path, 'webcam'))
 
-                    if matched:
-                        threading.Thread(
-                            target=send_alert_email,
-                            args=(plate_text, matched, img_path, timestamp),
-                            daemon=True
-                        ).start()
+                            latest_detection = {
+                                'plate'     : plate_text,
+                                'confidence': confidence,
+                                'matched'   : matched is not None,
+                                'info'      : matched,
+                                'timestamp' : timestamp
+                            }
 
-                elif coords is not None:
-                    annotated = draw_plate_box(frame.copy(), coords,
-                                               plate_text if plate_text else 'Scanning...',
-                                               False, confidence)
+                            if matched:
+                                threading.Thread(
+                                    target=send_alert_email,
+                                    args=(plate_text, matched, img_path, timestamp),
+                                    daemon=True
+                                ).start()
 
-        _, buffer   = cv2.imencode('.jpg', annotated)
-        frame_bytes = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' +
-               frame_bytes + b'\r\n')
+                        elif coords is not None:
+                            annotated = draw_plate_box(frame.copy(), coords,
+                                                       plate_text if plate_text else 'Scanning...',
+                                                       False, confidence)
+                except Exception:
+                    pass
+
+            if not camera_active:
+                break
+
+            _, buffer   = cv2.imencode('.jpg', annotated)
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' +
+                   frame_bytes + b'\r\n')
+
+    except GeneratorExit:
+        pass
+    finally:
+        # Always release camera when generator exits for any reason
+        camera_active = False
+        if camera is not None:
+            camera.release()
+            camera = None
 
 @app.route('/video_feed')
 @login_required
@@ -640,8 +659,10 @@ def get_latest_detection():
 def release_camera():
     global camera, camera_active
     camera_active = False
+    import time
+    time.sleep(0.1)  # give generator time to notice flag
     if camera is not None:
-        camera.release()  # fixed typo: was camera.relsease()
+        camera.release()
         camera = None
     return jsonify({'status': 'released'})
 
