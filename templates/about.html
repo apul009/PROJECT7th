@@ -73,36 +73,33 @@
 
 <div class="container">
     <div class="page-title">About This System</div>
-    <div class="page-sub">Automatic Number Plate Recognition — Nepali Embossed Plates</div>
+    <div class="page-sub"><h3>Automatic Number Plate Recognition for Nepali Embossed Plates</h3></div>
 
     <div class="panel">
-        <h2>📌 Project Overview</h2>
-        <p>This system is a college-level final year project implementing an Automatic Number Plate Recognition (ANPR) system specifically designed for Nepali embossed number plates. The system detects vehicle number plates, recognizes characters, and matches against a watchlist to trigger alerts.</p>
-        <p>The core character recognition CNN is implemented entirely from scratch using NumPy — without any pre-built deep learning libraries — achieving 98.6% test accuracy on the Nepali embossed plate character dataset.</p>
+        <h2>Project Overview</h2>
+        <p>This system is a college-level final year project which implements an Automatic Number Plate Recognition (ANPR) system. 
+            The system is specifically designed for Nepali embossed number plates. 
+            The system detects vehicle number plates, recognizes characters and matches against a watchlist to trigger alerts.</p>
+        <p>The core character recognition CNN is implemented entirely from scratch using NumPy and achieves 98.6% test accuracy on the Nepali embossed plate character dataset.</p>
 
         <div class="tech-grid">
             <div class="tech-item">
-                <div class="tech-icon">🧠</div>
-                <div class="tech-name">CNN from Scratch</div>
-                <div class="tech-desc">NumPy only — 98.6% accuracy</div>
+                <div class="tech-name">CNN</div>
+                <div class="tech-desc">NumPy with 98.6% accuracy</div>
             </div>
             <div class="tech-item">
-                <div class="tech-icon">🎯</div>
                 <div class="tech-name">YOLOv8 Plate Detector</div>
                 <div class="tech-desc">95.8% mAP50 — plate localization</div>
             </div>
             <div class="tech-item">
-                <div class="tech-icon">✂️</div>
                 <div class="tech-name">YOLOv8 Char Detector</div>
-                <div class="tech-desc">95.5% mAP50 — character segmentation</div>
+                <div class="tech-desc">95.5% mAP50 character segmentation</div>
             </div>
             <div class="tech-item">
-                <div class="tech-icon">🌐</div>
                 <div class="tech-name">Flask + SQLite</div>
-                <div class="tech-desc">Web dashboard & logging</div>
+                <div class="tech-desc">Web dashboard and logging</div>
             </div>
             <div class="tech-item">
-                <div class="tech-icon">📷</div>
                 <div class="tech-name">OpenCV</div>
                 <div class="tech-desc">Image preprocessing</div>
             </div>
@@ -112,23 +109,23 @@
         <div style="margin-top:20px">
             <div style="color:#555;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">System Pipeline</div>
             <div class="pipeline">
-                <div class="pipe-step">📷 Input</div>
+                <div class="pipe-step">Input</div>
                 <div class="pipe-arrow">→</div>
-                <div class="pipe-step">🎯 YOLO<br>Plate Detection</div>
+                <div class="pipe-step">YOLO<br>Plate Detection</div>
                 <div class="pipe-arrow">→</div>
-                <div class="pipe-step">⚙️ Preprocessing</div>
+                <div class="pipe-step">Preprocessing</div>
                 <div class="pipe-arrow">→</div>
-                <div class="pipe-step">✂️ YOLO<br>Char Detection</div>
+                <div class="pipe-step">YOLO<br>Char Detection</div>
                 <div class="pipe-arrow">→</div>
-                <div class="pipe-step">🧠 CNN<br>Recognition</div>
+                <div class="pipe-step">CNN<br>Recognition</div>
                 <div class="pipe-arrow">→</div>
-                <div class="pipe-step">🔔 Watchlist<br>Alert</div>
+                <div class="pipe-step">Watchlist<br>Alert</div>
             </div>
         </div>
     </div>
 
-    <div class="section-title">👥 Development Team</div>
-    <div class="section-sub">7th Semester Project — Computer Science & Information Technology</div>
+    <div class="section-title">Development Team</div>
+    <div class="section-sub">7th Semester Project for Computer Science & Information Technology</div>
 
     <div class="team-grid">
         <div class="member-card">
@@ -137,42 +134,27 @@
                 
             </div>
             <div class="member-name">Apul Baral</div>
-            <div class="member-role">Project Lead & ML Engineer</div>
-            <div class="member-desc">
-                
-                Responsible for CNN implementation from scratch, model training, and overall system architecture.
-            </div>
         </div>
+        
         <div class="member-card">
             <div class="member-photo">
-                <img src="/static/photos/kritiz.jpg"> 
-                
-            </div>
-            <div class="member-name">Kritiz Sapkota</div>
-            <div class="member-role">Backend Developer</div>
-            <div class="member-desc">
-                
-                Responsible for Flask backend, database design, API development, and system integration.
-            </div>
-        </div>
-        <div class="member-card">
-            <div class="member-photo">
-                <img src="/static/photos/gagan.jpg"> 
-                
+                <img src="/static/photos/gagan.jpg">  
             </div>
             <div class="member-name">Gagan Sapkota</div>
-            <div class="member-role">Frontend Developer</div>
-            <div class="member-desc">
-                
-                Responsible for dashboard UI/UX design, frontend development, and webcam integration.
+        </div>
+
+        <div class="member-card">
+            <div class="member-photo">
+                <img src="/static/photos/kritiz.jpg">   
             </div>
+            <div class="member-name">Kritiz Sapkota</div>
         </div>
     </div>
 
     <div class="notice-card">
         <div class="notice-icon">⚠️</div>
         <div class="notice-text">
-            <strong>Initial Development Phase — Privacy Notice</strong><br>
+            <strong>Privacy Notice</strong><br>
             This system is currently in its initial development phase and is intended for academic and demonstration purposes only. All vehicle detections are stored locally and not shared with third parties. The system should not be used for actual law enforcement without proper legal authorization. By using this system, you acknowledge it is a student project under active development.
         </div>
     </div>
