@@ -2,6 +2,7 @@ import os
 import threading
 import base64
 import datetime
+import re
 import cv2
 from flask import session
 
@@ -17,6 +18,11 @@ if os.path.exists('model.pkl'):
     model.load('model.pkl')
 else:
     print('model.pkl not found!')
+
+
+def is_valid_plate_format(plate_text):
+    """Return True only for plates formatted as three letters and four digits."""
+    return bool(plate_text and re.fullmatch(r'[A-Z]{3}[0-9]{4}', plate_text.upper()))
 
 
 def check_watchlist(plate_text):
@@ -44,7 +50,8 @@ def recognize_all_plates(image):
             continue
 
         plate_text, confidence, steps, char_boxes = segment_and_recognize(plate_img, model, IDX_TO_CHAR)
-        if not plate_text or plate_text in ["NOT DETECTED", "NO CHARS", ""]:
+        plate_text = plate_text.upper() if plate_text else plate_text
+        if not is_valid_plate_format(plate_text):
             continue
 
         matched = check_watchlist(plate_text)

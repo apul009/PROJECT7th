@@ -13,6 +13,7 @@ from ..services.recognition import (
     IDX_TO_CHAR,
     check_watchlist,
     encode_image,
+    is_valid_plate_format,
     log_detection,
     model,
     recognize_all_plates,
@@ -25,6 +26,8 @@ detection_bp = Blueprint('detection', __name__)
 camera = None
 latest_detection = {}
 camera_active = False
+active_tracks = []
+session_seen_plates = set()
 
 
 def get_camera():
@@ -146,7 +149,8 @@ def detect_video():
                 if det_conf < 0.40:
                     continue
                 plate_text, confidence, steps, char_boxes = segment_and_recognize(plate_img, model, IDX_TO_CHAR)
-                if not plate_text or plate_text in ['NOT DETECTED', 'NO CHARS', ''] or len(plate_text) < 4 or confidence < 70.0:
+                plate_text = plate_text.upper() if plate_text else plate_text
+                if not is_valid_plate_format(plate_text) or confidence < 70.0:
                     continue
                 matched = check_watchlist(plate_text)
                 if plate_text not in plate_best or confidence > plate_best[plate_text]['confidence']:
@@ -228,8 +232,11 @@ def get_latest_detection():
 
 @detection_bp.route('/release_camera', methods=['POST'])
 def release_camera():
-    global camera, camera_active
+    global camera, camera_active, active_tracks, session_seen_plates, latest_detection
     camera_active = False
+    active_tracks = []
+    session_seen_plates = set()
+    latest_detection = {}
     time.sleep(0.1)
     if camera is not None:
         camera.release()
@@ -238,9 +245,15 @@ def release_camera():
 
 
 def generate_frames():
-    global latest_detection, camera_active, camera
+    global latest_detection, camera_active, camera, active_tracks, session_seen_plates
     camera_active = True
     cam = get_camera()
+
+    # These are per-camera-session state.  They keep valid labels visible between
+    # recognition passes while avoiding repeated snapshot/log creation.
+    active_tracks = []
+    session_seen_plates = set()
+    latest_detection = {}
 
     frame_count = 0
     DETECT_EVERY = 15
@@ -261,13 +274,28 @@ def generate_frames():
                     plate_img, coords, det_conf = detect_plate_region(frame)
                     if det_conf >= MIN_CONF:
                         plate_text, confidence, steps, char_boxes = segment_and_recognize(plate_img, model, IDX_TO_CHAR)
-                        if plate_text and plate_text not in ['NOT DETECTED', 'NO CHARS', ''] and len(plate_text) >= 4 and confidence >= 70.0:
+                        plate_text = plate_text.upper() if plate_text else plate_text
+                        if is_valid_plate_format(plate_text) and confidence >= 70.0:
                             matched = check_watchlist(plate_text)
                             timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                            filename = f"cam_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-                            annotated = draw_plate_box(frame.copy(), coords, plate_text, matched is not None, confidence)
-                            img_path = save_image(annotated, filename)
-                            log_detection(plate_text, matched is not None, confidence, timestamp, img_path, 'webcam')
+                            active_tracks = [{
+                                'plate': plate_text,
+                                'coords': coords,
+                                'matched': matched is not None,
+                                'conf': confidence,
+                                # Show the last valid detection during the next recognition interval.
+                                'frames_left': DETECT_EVERY,
+                            }]
+
+                            # A plate is recorded once per live-camera session, not every sample.
+                            if plate_text not in session_seen_plates:
+                                filename = f"cam_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                                snapshot = draw_plate_box(frame.copy(), coords, plate_text, matched is not None, confidence)
+                                img_path = save_image(snapshot, filename)
+                                log_detection(plate_text, matched is not None, confidence, timestamp, img_path, 'webcam')
+                                session_seen_plates.add(plate_text)
+                            else:
+                                img_path = None
                             latest_detection = {
                                 'plate': plate_text,
                                 'confidence': confidence,
@@ -275,12 +303,21 @@ def generate_frames():
                                 'info': matched,
                                 'timestamp': timestamp,
                             }
-                            if matched:
+                            if matched and img_path:
                                 trigger_alert(plate_text, matched, img_path, timestamp)
-                        elif coords is not None:
-                            annotated = draw_plate_box(frame.copy(), coords, plate_text if plate_text else 'Scanning...', False, confidence)
                 except Exception:
                     pass
+
+            # Never show unvalidated recognition text.  Valid labels remain live
+            # on the scene between inference passes instead of flashing briefly.
+            live_tracks = []
+            for track in active_tracks:
+                if track['frames_left'] <= 0:
+                    continue
+                annotated = draw_plate_box(annotated, track['coords'], track['plate'], track['matched'], track['conf'])
+                track['frames_left'] -= 1
+                live_tracks.append(track)
+            active_tracks = live_tracks
 
             if not camera_active:
                 break

@@ -209,9 +209,16 @@
     let lastPlate      = '';
     let totalDetected  = 0;
     let totalAlerts    = 0;
+    let alertAudioContext = null;
 
     // ── START CAMERA ───────────────────────────────────
     function startCamera() {
+        // Create/resume audio from this click so alert beeps are not blocked by
+        // browser autoplay rules when a watchlist result arrives later.
+        try {
+            alertAudioContext = alertAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+            alertAudioContext.resume();
+        } catch (e) {}
         cameraRunning = true;
         sessionStart  = Date.now();
         lastPlate     = '';
@@ -413,7 +420,8 @@
     // ── ALERT SOUND ────────────────────────────────────
     function playAlertSound() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const ctx = alertAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+            if (ctx.state === 'suspended') ctx.resume();
             for (let i = 0; i < 3; i++) {
                 const osc  = ctx.createOscillator();
                 const gain = ctx.createGain();

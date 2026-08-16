@@ -159,6 +159,11 @@ function handleFile(file) {
 
 async function processVideo() {
     const file = videoInput.files[0];
+    // Prime alert audio while this button click is still a user gesture.
+    try {
+        window.alertAudioContext = window.alertAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+        await window.alertAudioContext.resume();
+    } catch (e) {}
     if (!file) return;
     processBtn.disabled  = true;
     processBtn.innerHTML = '<span class="spinner"></span>Processing video...';
@@ -187,6 +192,7 @@ async function processVideo() {
         document.getElementById('totalFrames').textContent = data.total_frames;
         document.getElementById('platesFound').textContent = data.plates_found;
         document.getElementById('alertsFound').textContent = data.results.filter(r=>r.matched).length;
+        if (data.results.some(r => r.matched)) playAlertSound();
 
         if (data.output_video) {
             document.getElementById('outputVideoWrap').style.display = 'block';
@@ -214,6 +220,21 @@ async function processVideo() {
         processBtn.disabled  = false;
         processBtn.innerHTML = '🚀 Process Video';
     }
+}
+
+function playAlertSound() {
+    try {
+        const ctx = window.alertAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+        for (let i = 0; i < 3; i++) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = 880; osc.type = 'square';
+            gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.4);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.4 + 0.3);
+            osc.start(ctx.currentTime + i * 0.4); osc.stop(ctx.currentTime + i * 0.4 + 0.3);
+        }
+    } catch (e) {}
 }
 </script>
 </body>

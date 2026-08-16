@@ -1,3 +1,4 @@
+import re
 from flask import (Flask, render_template, request, redirect,
                    jsonify, Response, session, url_for, send_file)
 import sqlite3, cv2, numpy as np, datetime, os, csv, pickle, hashlib
@@ -193,7 +194,9 @@ def recognize_all_plates(image):
         plate_text, confidence, steps, char_boxes = \
             segment_and_recognize(plate_img, model, IDX_TO_CHAR)
 
-        if not plate_text or plate_text in ["NOT DETECTED", "NO CHARS", ""]:
+        if (not plate_text or
+            plate_text in ["NOT DETECTED", "NO CHARS", ""] or
+            not is_valid_plate_format(plate_text)):
             continue
 
         matched   = check_watchlist(plate_text)
@@ -223,6 +226,18 @@ def check_watchlist(plate_text):
             "SELECT * FROM watchlist WHERE plate=?",
             (plate_text,)).fetchone()
     return dict(row) if row else None
+
+def is_valid_plate_format(plate_text):
+    """
+    Validates Nepali embossed plate format:
+    First row - 1 letter + space + 2 letters (read as 3 letters, no space)
+    Second row - 4 digits
+    Combined string must be exactly 3 letters followed by 4 digits.
+    """
+    if not plate_text or len(plate_text) != 7:
+        return False
+    pattern = r'^[A-Z]{3}[0-9]{4}$'
+    return bool(re.match(pattern, plate_text))
 
 def save_image(image, filename):
     path = os.path.join('static', 'uploads', filename)
@@ -437,7 +452,7 @@ def detect_video():
 
                 if (not plate_text or
                     plate_text in ["NOT DETECTED", "NO CHARS", ""] or
-                    len(plate_text) < 4 or
+                    not is_valid_plate_format(plate_text) or
                     confidence < 70.0):
                     continue
 
@@ -578,7 +593,7 @@ def generate_frames():
 
                         if (plate_text and
                             plate_text not in ["NOT DETECTED","NO CHARS",""] and
-                            len(plate_text) >= 4 and
+                            is_valid_plate_format(plate_text) and
                             confidence >= 70.0):
 
                             matched   = check_watchlist(plate_text)
